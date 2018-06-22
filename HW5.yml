@@ -1,0 +1,65 @@
+---
+- name: "HW5-Configuration Management Ansible Playbook"
+  hosts: all
+  vars: 
+    packages:
+      - python-dev
+      - python-pip
+      - gcc
+      - python-setuptools
+      - git-core
+      - python-setuptools
+      - debconf-utils
+
+  tasks:
+     
+      #Install git      
+    - name: Install git
+      apt: pkg=git state=present update_cache=yes cache_valid_time=1800
+      become: yes
+      
+      #Install npm and node.js
+    - name: Install npm and node.js 
+      apt: name={{item}} state=present 
+      with_items:
+        - npm
+        - nodejs
+        - nodejs-legacy
+      become: yes
+
+      #Install Forever
+    - name: "Install Forever"
+      npm: name=forever global=yes state=present 
+      become: yes
+
+      #Git cloning the DevOps App Repository
+    - name: git clone DevOps App Repository
+      git: repo=git://github.com/CSC-DevOps/App.git  dest=/home/vagrant/DevOps clone=yes update=yes
+      become: yes
+
+      #Install npm packages 
+    - name: "Install npm packages"
+      npm: path=/home/vagrant/DevOps state=latest
+      become: yes
+
+      #Run app using forever
+    - name: "Run app using forever"
+      command: forever start /home/vagrant/DevOps/main.js
+      become: yes
+
+      #Security
+    - name: Security updates
+      apt: name={{ item }} update_cache=yes cache_valid_time=1800 state=latest
+      with_items:
+        - bash
+        - openssh-server
+        - openssh-client
+        - openssl
+      become: yes
+
+      #clean /tmp folder
+    - name: Clean /tmp*
+      file: path=/tmp state=absent
+      become: yes
+
+    
